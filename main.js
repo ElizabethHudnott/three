@@ -150,21 +150,24 @@ function makeLentils2(panelNumber, numSlices) {
 	const length1 = panelSideLengths[0] * scale;
 	const length2 = panelSideLengths[1] * scale;
 	const height = panelWidth / panelAspectRatios[panelNumber];
+	const translateVector = new THREE.Vector3(length1 * Math.cos(0.25 * Math.PI), 0, -length1 * Math.sin(0.25 * Math.PI));
+	translateVector.add(new THREE.Vector3(length2 * Math.cos(0.25 * Math.PI), 0, length2 * Math.sin(0.25 * Math.PI)));
+	translateVector.normalize();
 
 	for (let i = 0; i < numSlices; i++) {
 		const side1Geometry = new THREE.PlaneGeometry(length1, height);
 		side1Geometry.rotateY(0.25 * Math.PI);
-		const positionX = i * scaledHypotenuse;
-		side1Geometry.translate(positionX, 0, 0);
+		const translateAmount = i * scaledHypotenuse;
 		const side1Material = new THREE.MeshBasicMaterial({});
 		const side1Mesh = new THREE.Mesh(side1Geometry, side1Material);
+		side1Mesh.translateOnAxis(translateVector, translateAmount);
 		scene.add(side1Mesh);
 		const side2Geometry = new THREE.PlaneGeometry(length2, height);
 		side2Geometry.translate(0.5 * length2, 0, -0.5 * length1);
 		side2Geometry.rotateY(-0.25 * Math.PI);
-		side2Geometry.translate(positionX, 0, 0);
 		const side2Material = new THREE.MeshBasicMaterial({});
 		const side2Mesh = new THREE.Mesh(side2Geometry, side2Material);
+		side2Mesh.translateOnAxis(translateVector, translateAmount);
 		scene.add(side2Mesh);
 		side1Meshes[i] = side1Mesh;
 		side2Meshes[i] = side2Mesh;
