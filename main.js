@@ -1,24 +1,42 @@
-//Version 0.151.3
+//Uses Three.js version 0.151.3.
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import * as ThreeD from './three-d.js';
 
+// Here are some configuration parameters. More are located near the bottom of this file.
+
+// The widths of each panel.
 const panelWidths = [9];
-const images = [[]];
+// The relative widths of each slice within a panel, indexed by panel number and face number.
 const sideLengths = [[(1186 / 640) / (770 / 442), 1]];
+// The aspect ratios of each panel.
 const panelAspectRatios = [Math.hypot(sideLengths[0][0], 1) * 770 / 442];
+/* The colours used to add padding, if any is needed in order to cope with an image aspect
+ * ratio that doesn't comply with the aspect ratio implied by sideLengths and
+ * panelAspectRatios. Indexed by panel number and face number.
+ */
 const borderColors = [['blue', 'blue']];
+/* The vertical alignment of each image within a panel when padding is needed. Indexed by
+ * panel number and face number.  0 = top, 0.5 = middle, 1 = bottom */
 const alignments = [[0.5, 0.5]];
 
+
+// Internal data storage.
+
+// Binary data for the source images, indexed by panel number and face number.
+const images = [[]];
+// Temporary working spaces for 2D drawing, indexed by panel number and face number.
 const canvases = [
 	[document.createElement('CANVAS'), document.createElement('CANVAS')]
 ];
-const lentilMeshes = [[[], []]];	// panel number, image number, slice number
+// 3D triangle meshes indexed by panel number, face number and slice number.
+const lentilMeshes = [[[], []]];
+
 
 const scene = new THREE.Scene();
-// 114 degree horizontal field of view by 60 degree vertical
+// Use a 114 degree horizontal field of view and 60 degrees vertically.
 const sceneAspect = 2 * Math.sin(ThreeD.radians(54));
-const camera = new THREE.PerspectiveCamera(60, sceneAspect, 0.1, 1000 );
+const camera = new THREE.PerspectiveCamera(60, sceneAspect, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({
 	canvas: document.getElementById('three'),
 	antialias: true,
@@ -118,7 +136,7 @@ function loadImage(filename, panelNumber, imageNumber) {
 	});
 }
 
-function makeLentils(panelNumber, numSlices) {
+function makeLentils2(panelNumber, numSlices) {
 	const side1Meshes = lentilMeshes[panelNumber][0];
 	const side2Meshes = lentilMeshes[panelNumber][1];
 	if (numSlices === undefined) {
@@ -153,9 +171,17 @@ function makeLentils(panelNumber, numSlices) {
 	}
 }
 
-makeLentils(0, 9);
+// More configuration parameters.
+
+// Create geometry for the first panel (Panel 0) with spaces for 2 images and 9 slices per image.
+makeLentils2(0, 9);
+// Load img/champenois.jpg into Panel 0, Face 0.
 loadImage('champenois.jpg', 0, 0);
+// Load futuristic-freeway.jpg into Panel 0, Face 1.
 loadImage('futuristic-freeway.jpg', 0, 1);
+
+
+// Camera, animation and UI programming.
 
 camera.position.z = 5;
 

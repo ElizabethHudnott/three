@@ -1,14 +1,32 @@
 body {
 	background-color: black;
-	margin: 0px;
+	margin: 0;
 	width: 100vw;
 	height: 100vh;
 }
 
+a {
+	color: #8888ec;
+	text-decoration: none;
+}
+
+a:hover {
+	color: #9393ff;
+}
+
 #three {
-	display: block;
 	position: absolute;
 	left: 50%;
-	bottom: 0px;
+	bottom: 0;
 	transform: translate(-50%, 0);
+}
+
+#credits {
+	color: #d8d8d8;
+	position: absolute;
+	left: 50%;
+	bottom: 0;
+	transform: translate(-50%, 0);
+	width: max-content;
+	z-index: 1;
 }
