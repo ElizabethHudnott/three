@@ -10,27 +10,6 @@ function radians(degrees) {
 	return degrees * Math.PI / 180;
 }
 
-// 2D Shapes
-
-function triangle90(width, height) {
-	const shape = new THREE.Shape();
-	shape.moveTo(0, 0);
-	shape.lineTo(width, 0);
-	shape.lineTo(0, height);
-	shape.lineTo(0, 0);
-	return shape;
-}
-
-// 3D Shapes
-
-function prism(shape, depth) {
-	const settings = {
-		depth: depth,
-		bevelEnabled: false,
-	};
-	return new THREE.ExtrudeGeometry(shape, settings);
-}
-
 // Transformations
 
 function setRotation(geometry, xDegrees, yDegrees, zDegrees) {
@@ -42,7 +21,5 @@ function setRotation(geometry, xDegrees, yDegrees, zDegrees) {
 
 export {
 	radians,
-	triangle90,
-	prism,
 	setRotation,
 }
