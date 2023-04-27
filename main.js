@@ -132,6 +132,29 @@ function createSlices(panelNumber, imageNumber) {
 	}
 }
 
+function optimizePanel2(panelNumber) {
+	const panelImages = images[panelNumber];
+	const image1 = panelImages[0];
+	const image2 = panelImages[1];
+	const aspect1 = image1.naturalWidth / image1.naturalHeight;
+	const aspect2 = image2.naturalWidth / image2.naturalHeight;
+	const panelSideLengths = sideLengths[panelNumber];
+	let minAspect;
+	if (aspect1 >= aspect2) {
+		panelSideLengths[0] = aspect1 / aspect2;
+		panelSideLengths[1] = 1;
+		minAspect = aspect2;
+	} else {
+		panelSideLengths[0] = 1;
+		panelSideLengths[1] = aspect2 / aspect1;
+		minAspect = aspect1;
+	}
+	const halfAngle = 0.5 * (Math.PI - lentilAngles[panelNumber][0]);
+	const cos = Math.cos(halfAngle);
+	const hypotenuse = (panelSideLengths[0] + panelSideLengths[1]) * cos;
+	panelAspectRatios[panelNumber] = hypotenuse * minAspect;
+}
+
 function loadImage(filename, panelNumber, imageNumber) {
 	imageLoader.load('./img/' + filename, function (image) {
 		images[panelNumber][imageNumber] = image;
