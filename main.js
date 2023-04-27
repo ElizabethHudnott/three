@@ -11,6 +11,8 @@ const panelWidths = [9];
 const sideLengths = [[(1186 / 640) / (770 / 442), 1]];
 // The aspect ratios of each panel.
 const panelAspectRatios = [Math.hypot(sideLengths[0][0], 1) * 770 / 442];
+// The angle that each face forms with its neighbour, in radians.
+const lentilAngles = [[0.5 * Math.PI]];
 /* The colours used to add padding, if any is needed in order to cope with an image aspect
  * ratio that doesn't comply with the aspect ratio implied by sideLengths and
  * panelAspectRatios. Indexed by panel number and face number.
@@ -29,6 +31,7 @@ const images = [[]];
 const canvases = [
 	[document.createElement('CANVAS'), document.createElement('CANVAS')]
 ];
+const backsideLengths = [];
 // 3D triangle meshes indexed by panel number, face number and slice number.
 const lentilMeshes = [[[], []]];
 
@@ -101,7 +104,7 @@ function sliceImage(canvas, image, aspectRatio, numSlices, borderColor, vAlign) 
 }
 
 function createSlices(panelNumber, imageNumber) {
-	const hypotenuse = Math.hypot(...sideLengths[panelNumber]);
+	const hypotenuse = backsideLengths[panelNumber];
 	const multiplier = sideLengths[panelNumber][imageNumber] / hypotenuse;
 	const aspectRatio = multiplier * panelAspectRatios[panelNumber];
 
@@ -142,31 +145,42 @@ function makeLentils2(panelNumber, numSlices) {
 	if (numSlices === undefined) {
 		numSlices = side1Meshes.length;
 	}
+	const halfAngle = 0.5 * (Math.PI - lentilAngles[panelNumber][0]);
+	const cos = Math.cos(halfAngle);
+	const sin = Math.sin(halfAngle);
 	const panelSideLengths = sideLengths[panelNumber];
-	const hypotenuse = Math.hypot(...panelSideLengths);
+	let length1 = panelSideLengths[0];
+	let length2 = panelSideLengths[1];
+	const hypotenuse = (length1 + length2) * cos;
+	backsideLengths[panelNumber] = hypotenuse;
 	const panelWidth = panelWidths[panelNumber];
 	const scaledHypotenuse = panelWidth / numSlices;
 	const scale = scaledHypotenuse / hypotenuse;
-	const length1 = panelSideLengths[0] * scale;
-	const length2 = panelSideLengths[1] * scale;
 	const height = panelWidth / panelAspectRatios[panelNumber];
-	const translateVector = new THREE.Vector3(length1 * Math.cos(0.25 * Math.PI), 0, -length1 * Math.sin(0.25 * Math.PI));
-	translateVector.add(new THREE.Vector3(length2 * Math.cos(0.25 * Math.PI), 0, length2 * Math.sin(0.25 * Math.PI)));
+	length1 *= scale;
+	length2 *= scale;
+	const vector1 = new THREE.Vector3(length1 * cos, 0, -length1 * sin);
+	const vector2 = new THREE.Vector3(length2 * cos, 0, length2 * sin);
+	const translateVector = vector1.clone();
+	translateVector.add(vector2);
+	vector1.normalize();
+	vector2.normalize();
 	translateVector.normalize();
 
 	for (let i = 0; i < numSlices; i++) {
 		const side1Geometry = new THREE.PlaneGeometry(length1, height);
-		side1Geometry.rotateY(0.25 * Math.PI);
+		side1Geometry.rotateY(halfAngle);
 		const translateAmount = i * scaledHypotenuse;
 		const side1Material = new THREE.MeshBasicMaterial({});
 		const side1Mesh = new THREE.Mesh(side1Geometry, side1Material);
 		side1Mesh.translateOnAxis(translateVector, translateAmount);
 		scene.add(side1Mesh);
 		const side2Geometry = new THREE.PlaneGeometry(length2, height);
-		side2Geometry.translate(0.5 * length2, 0, -0.5 * length1);
-		side2Geometry.rotateY(-0.25 * Math.PI);
+		side2Geometry.rotateY(-halfAngle);
 		const side2Material = new THREE.MeshBasicMaterial({});
 		const side2Mesh = new THREE.Mesh(side2Geometry, side2Material);
+		side2Mesh.translateOnAxis(vector1, 0.5 * length1);
+		side2Mesh.translateOnAxis(vector2, 0.5 * length2);
 		side2Mesh.translateOnAxis(translateVector, translateAmount);
 		scene.add(side2Mesh);
 		side1Meshes[i] = side1Mesh;
