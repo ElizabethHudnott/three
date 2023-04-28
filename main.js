@@ -38,7 +38,7 @@ const lentilMeshes = [[[], []]];
 
 const scene = new THREE.Scene();
 // Use a 114 degree horizontal field of view and 60 degrees vertically.
-const sceneAspect = 2 * Math.sin(ThreeD.radians(54));
+const sceneAspect = 2 * Math.sin(ThreeD.radians(57));
 const camera = new THREE.PerspectiveCamera(60, sceneAspect, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({
 	canvas: document.getElementById('three'),
