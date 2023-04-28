@@ -115,11 +115,9 @@ function createSlices(panelNumber, imageNumber) {
 	const borderColor = borderColors[panelNumber][imageNumber];
 	const vAlign = alignments[panelNumber][imageNumber];
 
-	if (meshes[0].material.map !== null) {
-		for (let i = 0; i < numSlices; i++) {
-			const material = meshes[i].material;
-			const texture = material.map;
-			material.map = null;
+	for (let i = 0; i < numSlices; i++) {
+		const texture = meshes[i].material.map;
+		if (texture !== null) {
 			texture.dispose();
 		}
 	}
@@ -162,12 +160,59 @@ function loadImage(filename, panelNumber, imageNumber) {
 	});
 }
 
+function disposeObjects(panelNumber, numSides = 2, numSlices = 0) {
+	const meshes = lentilMeshes[panelNumber];
+	const prevNumSides = meshes.length;
+	const prevNumSlices = meshes[0].length;
+	// Remove meshes from the scene and dispose of all geometries.
+	for (let i = 0; i < prevNumSides; i++) {
+		for (let j = 0; j < prevNumSlices; j++) {
+			const mesh = meshes[i][j];
+			mesh.removeFromParent();
+			mesh.geometry.dispose();
+		}
+	}
+	// If we need fewer SIDES then dispose of excess textures, materials and meshes.
+	for (let i = numSides; i < prevNumSides; i++) {
+		for (let j = 0; j < prevNumSlices; j++) {
+			const mesh = meshes[i][j];
+			const material = mesh.material;
+			const texture = material.map;
+			if (texture) {
+				texture.dispose();
+			}
+			material.dispose();
+			mesh.dispose();
+		}
+	}
+	meshes.splice(numSides);
+
+	// If we need fewer SLICES then dispose of excess textures, materials and meshes.
+	for (let i = 0; i < numSides; i++) {
+		const faceMeshes = meshes[i];
+		for (let j = numSlices; j < prevNumSlices; j++) {
+			const mesh = faceMeshes[j];
+			const material = mesh.material;
+			const texture = material.map;
+			if (texture) {
+				texture.dispose();
+			}
+			material.dispose();
+			mesh.dispose();
+		}
+		faceMeshes.splice(numSlices);
+	}
+}
+
 function makeLentils2(panelNumber, numSlices) {
 	const side1Meshes = lentilMeshes[panelNumber][0];
 	const side2Meshes = lentilMeshes[panelNumber][1];
+	const prevNumSlices = side1Meshes.length;
 	if (numSlices === undefined) {
-		numSlices = side1Meshes.length;
+		numSlices = prevNumSlices;
 	}
+	disposeObjects(panelNumber, 2, numSlices);
+
 	const halfAngle = 0.5 * (Math.PI - lentilAngles[panelNumber][0]);
 	const cos = Math.cos(halfAngle);
 	const sin = Math.sin(halfAngle);
@@ -191,23 +236,42 @@ function makeLentils2(panelNumber, numSlices) {
 	translateVector.normalize();
 
 	for (let i = 0; i < numSlices; i++) {
+		// Create new geometry
 		const side1Geometry = new THREE.PlaneGeometry(length1, height);
-		side1Geometry.rotateY(halfAngle);
-		const translateAmount = i * scaledHypotenuse;
-		const side1Material = new THREE.MeshBasicMaterial({});
-		const side1Mesh = new THREE.Mesh(side1Geometry, side1Material);
-		side1Mesh.translateOnAxis(translateVector, translateAmount);
-		scene.add(side1Mesh);
 		const side2Geometry = new THREE.PlaneGeometry(length2, height);
+		let side1Mesh = side1Meshes[i];
+		let side2Mesh = side2Meshes[i];
+
+		/* Create new meshes if needed. Otherwise just replace the old geometry, return the
+		 * shapes to the origin and reset the rotation. */
+		if (side1Mesh) {
+			side1Mesh.geometry = side1Geometry;
+			side2Mesh.geometry = side2Geometry;
+			side1Mesh.matrix.identity();
+			side1Mesh.matrix.decompose(side1Mesh.position, side1Mesh.quaternion, side1Mesh.scale);
+			side2Mesh.matrix.identity();
+			side2Mesh.matrix.decompose(side2Mesh.position, side2Mesh.quaternion, side2Mesh.scale);
+		} else {
+			side1Mesh = new THREE.Mesh(side1Geometry);
+			side2Mesh = new THREE.Mesh(side2Geometry);
+			side1Meshes[i] = side1Mesh;
+			side2Meshes[i] = side2Mesh;
+		}
+
+		// Position the first face.
+		side1Geometry.rotateY(halfAngle);
 		side2Geometry.rotateY(-halfAngle);
-		const side2Material = new THREE.MeshBasicMaterial({});
-		const side2Mesh = new THREE.Mesh(side2Geometry, side2Material);
+		const translateAmount = i * scaledHypotenuse;
+		side1Mesh.translateOnAxis(translateVector, translateAmount);
+
+		// Position the second face.
 		side2Mesh.translateOnAxis(vector1, 0.5 * length1);
 		side2Mesh.translateOnAxis(vector2, 0.5 * length2);
 		side2Mesh.translateOnAxis(translateVector, translateAmount);
+
+		// Add the two meshes to the scene.
+		scene.add(side1Mesh);
 		scene.add(side2Mesh);
-		side1Meshes[i] = side1Mesh;
-		side2Meshes[i] = side2Mesh;
 	}
 }
 
