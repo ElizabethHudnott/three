@@ -1,6 +1,8 @@
 //Uses Three.js version 0.151.3.
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+// dat.gui version 0.7.9.
+import * as dat from './lib/dat.gui.module.js';
 import * as ThreeD from './three-d.js';
 
 // Here are some configuration parameters. More are located near the bottom of this file.
@@ -151,6 +153,8 @@ function optimizePanel2(panelNumber) {
 	const cos = Math.cos(halfAngle);
 	const hypotenuse = (panelSideLengths[0] + panelSideLengths[1]) * cos;
 	panelAspectRatios[panelNumber] = hypotenuse * minAspect;
+	createSlices(panelNumber, 0);
+	createSlices(panelNumber, 1);
 }
 
 function loadImage(filename, panelNumber, imageNumber) {
@@ -296,3 +300,19 @@ function animate() {
 	renderer.render(scene, camera);
 }
 animate();
+
+const sideNames = ['Left', 'Right', 'Straight On'];
+const gui = new dat.GUI();
+const panelFolders = [];
+const sideFolders = [];
+for (let i = 0; i < lentilMeshes.length; i++) {
+	const panelFolder = gui.addFolder('Panel ' + String(i + 1));
+	panelFolders[i] = panelFolder;
+	panelFolder.open();
+	sideFolders[i] = [];
+	for (let j = 0; j < 2; j++) {
+		const sideFolder = panelFolder.addFolder(sideNames[j]);
+		sideFolders[i][j] = sideFolder;
+		sideFolder.open();
+	}
+}
