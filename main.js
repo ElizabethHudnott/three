@@ -293,11 +293,11 @@ loadImage('futuristic-freeway.jpg', 0, 1);
 
 camera.position.z = 5;
 
-const controls = new OrbitControls(camera, renderer.domElement );
+const controls = new OrbitControls(camera, renderer.domElement);
 
 function animate() {
-	requestAnimationFrame(animate);
 	renderer.render(scene, camera);
+	requestAnimationFrame(animate);
 }
 animate();
 
