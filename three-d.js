@@ -22,6 +22,42 @@ function radians(degrees) {
 	return degrees * Math.PI / 180;
 }
 
+/** Detect and remove co-linear points;
+ */
+function removeColinear(points) {
+	const numPoints = points.length >> 1;
+	if (numPoints <= 1) {
+		return points;
+	}
+
+	let prevX = points[0];
+	let prevY = points[1];
+	let x = points[2];
+	let y = points[3];
+	const newPoints = [prevX, prevY];
+
+	for (let i = 1; i < numPoints; i++) {
+		const nextIndex = 2 * ((i + 1) % numPoints);
+		const nextX = points[nextIndex];
+		const nextY = points[nextIndex + 1];
+		if (
+			(x !== prevX || y !== prevY) &&
+			(nextIndex !== 0 || nextX !== x || nextY !== y)
+		) {
+			const m1 = (y - prevY) / (x - prevX);
+			const m2 = (nextY - y) / (nextX - x);
+			if (m1 !== m2) {
+				newPoints.push(x, y);
+			}
+		}
+		prevX = x;
+		prevY = y;
+		x = nextX;
+		y = nextY;
+	}
+	return new Float32Array(newPoints);
+}
+
 function regularPolygonPoints(
 	numSides, radius1, radius2 = radius1, rotation = 0, turnThrough = 2 * Math.PI
 ) {
@@ -130,6 +166,102 @@ function cyclicPoints(angles, radius1, radius2 = radius1) {
 		index++;
 	}
 	return points;
+}
+
+function tangentialPolygonPoints(angles, radius1, radius2 = radius1) {
+
+}
+
+function parallelPolylinePoints(points, translateX, translateY, scaleX = 1, scaleY = 1) {
+	const numPoints = points.length >> 1;
+	const polygonPoints = new Float32Array(4 * numPoints);
+	for (let i = 0; i < numPoints; i++) {
+		let index = 2 * i;
+		const x = points[index];
+		polygonPoints[index] = x;
+		index++;
+		const y = points[index];
+		polygonPoints[index] = y;
+		index = 2 * (2 * numPoints - 1 - i);
+		const x2 = x * scaleX + translateX;
+		const y2 = y * scaleY + translateY;
+		polygonPoints[index] = x2;
+		polygonPoints[index + 1] = y2;
+	}
+	return removeColinear(polygonPoints);
+}
+
+function parallelPolylinePoints2(
+	points, translateY, centreDeltaX1, centreDeltaX2 = centreDeltaX1, mirrored = true
+) {
+	const numPoints = points.length >> 1;
+	const polygonPoints = new Float32Array(4 * numPoints + 4);
+	const scaleY = mirrored ? -1 : 1;
+	let index;
+	for (let i = 0; i < numPoints; i++) {
+		index = 2 * i;
+		const x = points[index];
+		polygonPoints[index] = x;
+		index++;
+		const y = points[index];
+		polygonPoints[index] = y;
+		index = 2 * (2 * numPoints - i);
+		const y2 = y * scaleY + translateY;
+		polygonPoints[index] = x;
+		polygonPoints[index + 1] = y2;
+	}
+	index = 2 * numPoints;
+	polygonPoints[index] = points[index - 2] + centreDeltaX1;
+	const middleY = 0.5 * translateY;
+	polygonPoints[index + 1] = middleY;
+	index = 4 * numPoints + 2;
+	polygonPoints[index] = points[0] + centreDeltaX2;
+	polygonPoints[index + 1] = middleY;
+	return removeColinear(polygonPoints);
+}
+
+/**Rotates a polyline about (0, 0) and joins the two polylines together.
+ * @param {number} centreR1 The radius at the angle halfway between the two endpoints, or
+ * undefined to join the endpoints using a straight line.
+ */
+function rotatedPolylinePoints(points, angle, centreR1, centreR2, mirrored = true) {
+	const numPoints = points.length >> 1;
+	const polygonPoints = new Float32Array(4 * numPoints + 4);
+	const scaleTheta = mirrored ? -1 : 1;
+	let index;
+	for (let i = 0; i < numPoints; i++) {
+		index = 2 * i;
+		const x = points[index];
+		polygonPoints[index] = x;
+		index++;
+		const y = points[index];
+		polygonPoints[index] = y;
+		index = 2 * (2 * numPoints - i);
+		const radius = Math.hypot(x, y);
+		const theta = Math.atan2(y, x);
+		const theta2 = angle + scaleTheta * theta;
+		polygonPoints[index] = radius * Math.cos(theta2);
+		polygonPoints[index + 1] = radius * Math.sin(theta2);
+	}
+	index = 2 * numPoints;
+	const cos = Math.cos(0.5 * angle);
+	const sin = Math.sin(0.5 * angle);
+	if (centreR1 === undefined) {
+		polygonPoints[index] = polygonPoints[index - 2];
+		polygonPoints[index + 1] = polygonPoints[index - 1];
+	} else {
+		polygonPoints[index] = centreR1 * cos;
+		polygonPoints[index + 1] = centreR1 * sin;
+	}
+	index = 4 * numPoints + 2;
+	if (centreR2 === undefined) {
+		polygonPoints[index] = polygonPoints[0];
+		polygonPoints[index + 1] = polygonPoints[1];
+	} else {
+		polygonPoints[index] = centreR2 * cos;
+		polygonPoints[index + 1] = centreR2 * sin;
+	}
+	return removeColinear(polygonPoints);
 }
 
 function polarToRectPoints(angles, radii) {
@@ -247,10 +379,14 @@ export {
 	AxesPlane,
 	gcd,
 	radians,
+	removeColinear,
 	regularPolygonPoints,
 	starPolygonPoints,
 	cyclicPoints,
 	polarToRectPoints,
+	parallelPolylinePoints,
+	parallelPolylinePoints2,
+	rotatedPolylinePoints,
 	setRotation,
 	polygonGeometry,
 }

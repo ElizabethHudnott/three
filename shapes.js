@@ -12,7 +12,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 const centre = new THREE.Vector3(0, 0, 0);
-const points = ThreeD.starPolygonPoints(5, 2, 1);
+const points = ThreeD.rotatedPolylinePoints([0.4, 0, 0.75, -0.25, 1.25, 0], ThreeD.radians(22.5));
 const geometry = ThreeD.polygonGeometry(points, centre, ThreeD.AxesPlane.XY);
 const material = new THREE.MeshBasicMaterial({color: 0x00ff00});
 const mesh = new THREE.Mesh(geometry, material);
