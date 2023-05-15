@@ -59,7 +59,7 @@ function removeColinear(points) {
 }
 
 function regularPolygonPoints(
-	numSides, radius1, radius2 = radius1, rotation = 0, turnThrough = 2 * Math.PI
+	numSides, radii, stretch = 1, rotation = 0, turnThrough = 2 * Math.PI
 ) {
 	let points, divisor, index;
 	if (turnThrough === 2 * Math.PI) {
@@ -71,10 +71,12 @@ function regularPolygonPoints(
 		divisor = numSides - 1;
 		index = 2;
 	}
+	const numRadii = radii.length;
 	for (let i = 0; i < numSides; i++) {
 		const angle = -(turnThrough * i / divisor + rotation);
-		const x = radius1 * Math.sin(angle);
-		const y = radius2 * Math.cos(angle);
+		const radius = radii[i % numRadii];
+		const x = stretch * radius * Math.sin(angle);
+		const y = radius * Math.cos(angle);
 		points[index] = x;
 		index++;
 		points[index] = y;
@@ -90,7 +92,7 @@ function starPolygonPoints(
 	numSides, starFactor, radius, dilation = 0,	rotation = 0, includedSides = numSides
 ) {
 	if (starFactor % numSides <= 1) {
-		return regularPolygonPoints(numSides, radius, radius, rotation);
+		return regularPolygonPoints(numSides, [radius], 1, rotation);
 	}
 
 	let radius2;
