@@ -87,6 +87,7 @@ function regularPolygonPoints(
 
 /**
  * @param {number} dilation Between -1 and 1.
+ * @param {number} includedSides E.g. a Hexagram reduced to only 3 included sides forms a boat.
  */
 function starPolygonPoints(
 	numSides, starFactor, radius, dilation = 0,	rotation = 0, includedSides = numSides
@@ -138,7 +139,7 @@ function starPolygonPoints(
 		index = 2;
 	}
 
-	for (let i = 0; i < numSides; i++) {
+	for (let i = 0; i < includedSides; i++) {
 		const angle1 = -(2 * Math.PI * i / numSides + rotation);
 		const x1 = radius * Math.sin(angle1);
 		const y1 = radius * Math.cos(angle1);
@@ -168,6 +169,38 @@ function cyclicPoints(angles, radius1, radius2 = radius1) {
 		index++;
 	}
 	return points;
+}
+
+function rotationalSymmetryPoints(
+	edgeFractions, offsets, degree, radius, stretch = 1, rotation = 0, includedSides = degree
+) {
+	const pointsPerEdge = edgeFractions.length;
+	const points = new Float32Array(2 * pointsPerEdge * includedSides);
+	let index = 0;
+	let x1 = stretch * radius * Math.sin(-rotation);
+	let y1 = radius * Math.cos(-rotation);
+	for (let i = 0; i < includedSides; i++) {
+		const angle = -(2 * Math.PI * (i + 1) / degree + rotation);
+		const x2 = stretch * radius * Math.sin(angle);
+		const y2 = radius * Math.cos(angle);
+		const dx = x2 - x1;
+		const dy = y2 - y1;
+		const angle2 = -Math.atan2(dx, dy);
+		const sin = Math.sin(angle2);
+		const cos = Math.cos(angle2);
+		for (let j = 0; j < pointsPerEdge; j++) {
+			const fraction = edgeFractions[j];
+			const x3 = x1 + fraction * dx;
+			const y3 = y1 + fraction * dy;
+			points[index] = x3 + stretch * offsets[j] * cos;
+			index++;
+			points[index] = y3 + offsets[j] * sin;
+			index++;
+		}
+		x1 = x2;
+		y1 = y2;
+	}
+	return removeColinear(points);
 }
 
 function tangentialPolygonPoints(angles, radius1, radius2 = radius1) {
@@ -385,6 +418,7 @@ export {
 	regularPolygonPoints,
 	starPolygonPoints,
 	cyclicPoints,
+	rotationalSymmetryPoints,
 	polarToRectPoints,
 	parallelPolylinePoints,
 	parallelPolylinePoints2,
